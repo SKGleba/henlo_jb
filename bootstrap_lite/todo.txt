@@ -1,0 +1,7 @@
+opts:
+ - Exit -> Installs&/Launches taihenkaku, Exits
+ - Install Henkaku -> Downloads and installs the latest henkaku, does not reset config
+ - Install VitaDeploy -><<
+ - Replace NEAR with VitaDeploy
+ - Mount sd2vita as ux0 -><<
+ - Reset taihen config.txt -> downloads a template config.txt
