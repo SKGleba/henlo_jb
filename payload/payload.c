@@ -4,7 +4,7 @@
 
 // ALL 3.63-3.73 SPECIFIC SECTIONS ARE MARKED WITH "// BEGIN 3.63-3.73"
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define LOG(fmt, ...) debug_print("[%s:%d] " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)

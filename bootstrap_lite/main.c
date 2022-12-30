@@ -29,7 +29,7 @@
 
 #define printf psvDebugScreenPrintf
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 #define cprintf sceClibPrintf
@@ -58,7 +58,7 @@
 #define TEMP_UX0_PATH "ux0:temp/"
 #define TEMP_UR0_PATH "ur0:bgdl/"
 
-#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v0.9 by skgleba"
+#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0 by skgleba"
 
 #define OPTION_COUNT 5
 enum E_MENU_OPTIONS {
@@ -116,7 +116,7 @@ int install_vitadeploy_default() {
 int vitadeploy_x_near(int syscall_id) {
     COLORPRINTF(COLOR_WHITE, "This replaces the discontinued \"near\" app with VitaDeploy.\nRequires reboot to take effect.\n\n");
     COLORPRINTF(COLOR_YELLOW, "WARNING: this will cause your bubble layout to be reset\n\n");
-    COLORPRINTF(COLOR_CYAN, "SQUARE: Replace NEAR with VitaDeploy\nTRIANGLE: Restore NEAR\nCIRCLE: Go back\n");
+    COLORPRINTF(COLOR_CYAN, "SQUARE: Replace NEAR with VitaDeploy\nTRIANGLE: Restore NEAR\nCIRCLE: Go back\n\n");
     sceKernelDelayThread(0.5 * 1000 * 1000);
     SceCtrlData pad;
     while (1) {
@@ -250,7 +250,7 @@ int install_henkaku(void) {
 void main_menu(int sel) {
     psvDebugScreenClear(COLOR_BLACK);
     COLORPRINTF(COLOR_YELLOW, BOOTSTRAP_VERSION_STR "\n");
-    COLORPRINTF(COLOR_WHITE, "\n---------------------------------------------\n");
+    COLORPRINTF(COLOR_WHITE, "\n---------------------------------------------\n\n");
     for (int i = 0; i < OPTION_COUNT; i++) {
         if (sel == i)
             psvDebugScreenSetFgColor(COLOR_CYAN);
@@ -270,9 +270,7 @@ int _start(SceSize args, void* argp) {
         goto EXIT;
 
     psvDebugScreenInit();
-    psvDebugScreenSetFgColor(COLOR_CYAN);
-    printf("henlo-bootstrap\n");
-    psvDebugScreenSetFgColor(COLOR_YELLOW);
+    COLORPRINTF(COLOR_CYAN, BOOTSTRAP_VERSION_STR "\n");
 
     int sel = 0;
     SceCtrlData pad;
@@ -347,13 +345,18 @@ int _start(SceSize args, void* argp) {
 
 EXIT:
     cprintf("EXIT with res 0x%08X\n", res);
+    printf("Exiting in 3\n");
+    sceKernelDelayThread(3 * 1000 * 1000);
+    
     // Remove pkg patches
     cprintf("Remove pkg patches.. \n");
     res = call_syscall(0, 0, 0, syscall_id + 1);
     if (res >= 0) {
         // Start HENkaku
         cprintf("Henkkek.. \n");
+        printf("\nStarting the taihen framework...\n\n\nIf you are stuck on this screen:\n\n - Force reboot by holding the power button\n\n - Launch the exploit again\n\n - Hold Left Trigger [LT] while exiting\n\n\n\nIf the issue persists reset the taihen config.txt using the bootstrap menu\n");
         res = call_syscall(0, 0, 0, syscall_id + 0);
+        psvDebugScreenClear(COLOR_BLACK);
     } else {
         // Remove sig patches
         cprintf("Remove sig patches\n");
@@ -361,7 +364,9 @@ EXIT:
     }
 
     if (res < 0 && res != 0x8002D013 && res != 0x8002D017) {
-        printf(" > Failed to load HENkaku! 0x%08X\n", res);
+        COLORPRINTF(COLOR_YELLOW, BOOTSTRAP_VERSION_STR "\n");
+        COLORPRINTF(COLOR_WHITE, "\n---------------------------------------------\n\n");
+        printf(" > Failed to start taihen! 0x%08X\n", res);
         printf(" > Please relaunch the exploit and select 'Install HENkaku'.\n");
     }
 
@@ -370,8 +375,6 @@ EXIT:
     call_syscall(0, 0, 0, syscall_id + 3);
 
     cprintf("all done, exit\n");
-    printf("Exiting in 3\n");
-    sceKernelDelayThread(3 * 1000 * 1000);
 
     cprintf("unloading PAF\n");
     unload_sce_paf();
