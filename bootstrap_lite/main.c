@@ -58,7 +58,7 @@
 #define TEMP_UX0_PATH "ux0:temp/"
 #define TEMP_UR0_PATH "ur0:bgdl/"
 
-#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0.1 by skgleba"
+#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0.2 by skgleba"
 
 #define OPTION_COUNT 5
 enum E_MENU_OPTIONS {
@@ -130,28 +130,28 @@ int vitadeploy_x_near(int syscall_id) {
             return 0;
         else if (pad.buttons == SCE_CTRL_TRIANGLE) {
             printf("Preparing to restore NEAR..\n");
-            void* buf = malloc(0x100);
-            vshIoUmount(0x300, 0, 0, 0);
-            vshIoUmount(0x300, 1, 0, 0);
-            int ret = _vshIoMount(0x300, 0, 2, buf);
-            if (ret < 0)
-                printf("Mount error 0x%08X -> will probably error later\n", ret);
             sceIoMkdir(TEMP_UR0_PATH, 0777);
             removeDir(TEMP_UR0_PATH "app");
             sceIoMkdir(TEMP_UR0_PATH "app", 0777);
-            ret = copyDir("vs0:app/NPXS10000/near_backup", TEMP_UR0_PATH "app");
+            int ret = copyDir("vs0:app/NPXS10000/near_backup", TEMP_UR0_PATH "app");
+            if (ret < 0) {
+                COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", ret);
+                goto VXN_REBOOT;
+            }
+            printf("Remounting vs0 to grw0..\n");
+            ret = call_syscall(0, 0, 0, syscall_id + 4);
             if (ret < 0) {
                 COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", ret);
                 goto VXN_REBOOT;
             }
             printf("Removing VitaDeploy..\n");
-            ret = removeDir("vs0:app/NPXS10000");
+            ret = removeDir("grw0:app/NPXS10000");
             if (ret < 0) {
                 COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", ret);
                 goto VXN_REBOOT;
             }
             printf("Restoring NEAR..\n");
-            ret = copyDir(TEMP_UR0_PATH "app", "vs0:app/NPXS10000");
+            ret = copyDir(TEMP_UR0_PATH "app", "grw0:app/NPXS10000");
             if (ret < 0) {
                 COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", ret);
                 goto VXN_REBOOT;
@@ -164,17 +164,10 @@ int vitadeploy_x_near(int syscall_id) {
             goto VXN_REBOOT;
         }
     }
-    printf("Preparing vs0\n");
-    void* buf = malloc(0x100);
-    vshIoUmount(0x300, 0, 0, 0);
-    vshIoUmount(0x300, 1, 0, 0);
-    int res = _vshIoMount(0x300, 0, 2, buf);
-    if (res < 0)
-        printf("Mount error 0x%08X -> will probably error later\n", res);
     sceIoMkdir(TEMP_UR0_PATH, 0777);
     printf("Downloading vitadeploy\n");
     net(1);
-    res = download_file(HEN_REPO_URL VDEP_VPK_FNAME, TEMP_UR0_PATH VDEP_VPK_FNAME, TEMP_UR0_PATH VDEP_VPK_FNAME "_tmp", 0);
+    int res = download_file(HEN_REPO_URL VDEP_VPK_FNAME, TEMP_UR0_PATH VDEP_VPK_FNAME, TEMP_UR0_PATH VDEP_VPK_FNAME "_tmp", 0);
     if (res < 0) {
         COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", res);
         goto VXN_REBOOT;
@@ -201,11 +194,18 @@ int vitadeploy_x_near(int syscall_id) {
     sceIoRemove(TEMP_UR0_PATH "app/sce_sys/param.sfo");
     sceIoRename(TEMP_UR0_PATH "app/sce_sys/vs.sfo", TEMP_UR0_PATH "app/sce_sys/param.sfo");
 
+    printf("Remounting vs0 to grw0..\n");
+    res = call_syscall(0, 0, 0, syscall_id + 4);
+    if (res < 0) {
+        COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", res);
+        goto VXN_REBOOT;
+    }
+
     printf("Replacing NEAR\n");
-    res = removeDir("vs0:app/NPXS10000");
+    res = removeDir("grw0:app/NPXS10000");
     cprintf("remove near : 0x%08X\n", res);
 
-    res = copyDir(TEMP_UR0_PATH "app", "vs0:app/NPXS10000");
+    res = copyDir(TEMP_UR0_PATH "app", "grw0:app/NPXS10000");
     if (res < 0) {
         COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", res);
         goto VXN_REBOOT;

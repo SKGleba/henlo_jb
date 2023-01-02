@@ -232,7 +232,9 @@ void *find_import(module_info_t *mod, uint32_t lnid, uint32_t fnid) {
 	return NULL;
 }
 
-static void (*debug_print)(char *fmt, ...) = 0;
+static uint32_t firmware_version = 0;
+
+static void (*debug_print)(char* fmt, ...) = 0;
 
 static int (*hook_resume_sbl_F3411881)() = 0;
 static int (*hook_resume_sbl_89CCDA2C)() = 0;
@@ -630,6 +632,7 @@ void cleanup_memory(void) {
 	ksceKernelSetSyscall(syscall_id + 1, syscall_stub);
 	ksceKernelSetSyscall(syscall_id + 2, syscall_stub);
 	ksceKernelSetSyscall(syscall_id + 3, syscall_stub);
+	ksceKernelSetSyscall(syscall_id + 4, syscall_stub);
 	LOG("freeing executable memory");
 	return free_and_exit(g_rx_block, ksceKernelFreeMemBlock, lr);
 }
@@ -693,11 +696,39 @@ int thread_main(int args, void *argp) {
 	return 0;
 }
 
+static uint32_t iofilemgr_seg0 = 0;
+static const char custom_grw0_mp[] = "sdstor0:int-lp-ina-vsh";
+
+int xmount_vs0_grw0(void) {
+	int state;
+	ENTER_SYSCALL(state);
+
+	ksceIoUmount(0xA00, 0, 0, 0);
+	ksceIoUmount(0xA00, 1, 0, 0);
+
+	// 3.63-3.74 only!
+	uint32_t patch_off = 0x1d804;
+	if (firmware_version > 0x03680011)
+		patch_off = 0x1dc44;
+
+	DACR_OFF(
+		memcpy((void*)(iofilemgr_seg0 + patch_off), custom_grw0_mp, sizeof(custom_grw0_mp));
+	);
+
+	ksceIoUmount(0xA00, 0, 0, 0);
+	ksceIoUmount(0xA00, 1, 0, 0);
+	int ret = ksceIoMount(0xA00, NULL, 0, 0, 0, 0);
+
+	EXIT_SYSCALL(state);
+	return ret;
+}
+
 int add_syscalls(void) {
 	ksceKernelSetSyscall(syscall_id + 0, load_taihen);
 	ksceKernelSetSyscall(syscall_id + 1, remove_pkgpatches);
 	ksceKernelSetSyscall(syscall_id + 2, remove_sigpatches);
 	ksceKernelSetSyscall(syscall_id + 3, cleanup_memory);
+	ksceKernelSetSyscall(syscall_id + 4, xmount_vs0_grw0);
 	return 0;
 }
 
@@ -761,6 +792,7 @@ void resolve_imports(unsigned sysmem_base) {
 		}
 		if (strcmp(info.name, "SceIofilemgr") == 0) {
 			iofilemgr_info = find_modinfo((u32_t)info.segments[0].vaddr, "SceIofilemgr");
+			DACR_OFF(iofilemgr_seg0 = (uint32_t)info.segments[0].vaddr);
 		}
 		if (strcmp(info.name, "SceProcessmgr") == 0) {
 			processmgr_info = find_modinfo((u32_t)info.segments[0].vaddr, "SceProcessmgr");
@@ -997,6 +1029,7 @@ void __attribute__ ((section (".text.start"))) payload(void *rx_block, uint32_t 
 
 	DACR_OFF(
 		debug_print = debug_print_local;
+		firmware_version = *(uint32_t*)(*(int*)(get_sysbase() + 0x6c) + 4);
 	);
 
 	LOG("+++ Entered kernel payload +++");
@@ -1006,7 +1039,7 @@ void __attribute__ ((section (".text.start"))) payload(void *rx_block, uint32_t 
 	resolve_imports(sysmem_base);
 
 	LOG("fixing netps heap");
-	fix_netps_heap(iflist_addr, *(uint32_t*)(*(int*)(get_sysbase() + 0x6c) + 4));
+	fix_netps_heap(iflist_addr, firmware_version);
 
 	LOG("set up syscalls starting at id: %x", syscall_id);
 	add_syscalls();
