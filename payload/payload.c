@@ -630,7 +630,6 @@ void cleanup_memory(void) {
 	ksceKernelSetSyscall(syscall_id + 1, syscall_stub);
 	ksceKernelSetSyscall(syscall_id + 2, syscall_stub);
 	ksceKernelSetSyscall(syscall_id + 3, syscall_stub);
-	ksceKernelSetSyscall(syscall_id + 4, syscall_stub);
 	LOG("freeing executable memory");
 	return free_and_exit(g_rx_block, ksceKernelFreeMemBlock, lr);
 }
@@ -694,24 +693,11 @@ int thread_main(int args, void *argp) {
 	return 0;
 }
 
-int remount_vs0(void) {
-	int state;
-	ENTER_SYSCALL(state);
-
-	ksceIoUmount(0x300, 0, 0, 0);
-	ksceIoUmount(0x300, 1, 0, 0);
-	int ret = ksceIoMount(0x300, NULL, 2, 0, 0, 0);
-	
-	EXIT_SYSCALL(state);
-	return ret;
-}
-
 int add_syscalls(void) {
 	ksceKernelSetSyscall(syscall_id + 0, load_taihen);
 	ksceKernelSetSyscall(syscall_id + 1, remove_pkgpatches);
 	ksceKernelSetSyscall(syscall_id + 2, remove_sigpatches);
 	ksceKernelSetSyscall(syscall_id + 3, cleanup_memory);
-	ksceKernelSetSyscall(syscall_id + 4, remount_vs0);
 	return 0;
 }
 

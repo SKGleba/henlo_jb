@@ -33,6 +33,14 @@ SceWebKit_gadgets_v368_v373 = {
   str_r0_r3_bx_lr: 0x24367d,
 }
 
+SceWebKit_offsets_v360 = {
+  SceWebKit_base_off: 0xabb65c,
+  SceNet_stub_off: 0x85F414,
+  SceLibc_stub_off: 0x85F504,
+  elementvtable_off: -0x70,
+  setscrollleft_off: 0x4e,
+}
+
 SceWebKit_offsets_v361_v365 = {
   SceWebKit_base_off: 0xabb63c,
   SceNet_stub_off: 0x85f3f4,
@@ -86,6 +94,7 @@ SceNetPs_gadgets_v360 = {
   pop_pc: 0x15e2f,
   pop_r0_r1_r2_r3_r4_r6_pc: 0x22d5d,
   ldm_r0_r0_r1_r2_r3_r4_ip_sp_lr_pc: 0xDEADBEEF,
+  // potential gadget: ldm_r0_r1_r3_r4_ip_sp_lr_pc: 0x10414,
   ldr_r0_r4_pop_r4_pc: 0x2a43d,
 
   str_r0_r4_pop_r4_pc: 0x165cf,
@@ -153,12 +162,22 @@ SceNetPs_gadgets_v371_v373 = {
   empty_string: 0x22,
 }
 
+SceNetPs_offsets_v360 = {
+  SceNetPs_base_off: -0x89d1,
+}
+
 SceNetPs_offsets_v363_v370 = {
   SceNetPs_base_off: -0x8d45,
 }
 
 SceNetPs_offsets_v371_v373 = {
   SceNetPs_base_off: -0x8d75,
+}
+
+SceSysmem_offsets_v360 = {
+  SceSysmem_base_off: -0xa8ee,
+  ksceKernelRemapBlock: 0xa74d,
+  ksceKernelCpuDcacheWritebackRange: 0x22fcd,
 }
 
 SceSysmem_offsets_v363_v373 = {
@@ -168,7 +187,28 @@ SceSysmem_offsets_v363_v373 = {
 }
 
 version_deps = {
-  // TODO: 3.60
+  "3.60": {
+    "SceWebKit": {
+      gadgets: SceWebKit_gadgets_v360,
+      offsets: SceWebKit_offsets_v360,
+    },
+    "SceLibc": {
+      functions: SceLibc_functions_v360_v373,
+      gadgets: SceLibc_gadgets_v360_v373,
+      offsets: SceLibc_offsets_v360_v373,
+    },
+    "SceNet": {
+      functions: SceNet_functions_v360_v373,
+      offsets: SceNet_offsets_v360_v373,
+    },
+    "SceNetPs": {
+      gadgets: SceNetPs_gadgets_v360,
+      offsets: SceNetPs_offsets_v360,
+    },
+    "SceSysmem": {
+      offsets: SceSysmem_offsets_v360,
+    },
+  },
   // TODO: 3.61
   "3.63": {
     "SceWebKit": {

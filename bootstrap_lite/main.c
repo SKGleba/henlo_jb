@@ -58,7 +58,7 @@
 #define TEMP_UX0_PATH "ux0:temp/"
 #define TEMP_UR0_PATH "ur0:bgdl/"
 
-#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0 by skgleba"
+#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0.1 by skgleba"
 
 #define OPTION_COUNT 5
 enum E_MENU_OPTIONS {
@@ -91,12 +91,15 @@ int install_vitadeploy_default() {
     COLORPRINTF(COLOR_CYAN, "Downloading vitadeploy\n");
     net(1);
     int res = download_file(HEN_REPO_URL VDEP_VPK_FNAME, TEMP_UX0_PATH VDEP_VPK_FNAME, TEMP_UX0_PATH VDEP_VPK_FNAME "_tmp", 0);
-    if (res < 0)
+    if (res < 0) {
+        if ((uint32_t)res == 0x80010013)
+            printf("Could not open file for write, is ux0 present?\n");
         return res;
+    }
     net(0);
 
     COLORPRINTF(COLOR_CYAN, "Extracting vpk\n");
-    remove(TEMP_UX0_PATH "app");
+    removeDir(TEMP_UX0_PATH "app");
     sceIoMkdir(TEMP_UX0_PATH "app", 0777);
     res = unzip(TEMP_UX0_PATH VDEP_VPK_FNAME, TEMP_UX0_PATH "app");
     if (res < 0)
@@ -127,74 +130,86 @@ int vitadeploy_x_near(int syscall_id) {
             return 0;
         else if (pad.buttons == SCE_CTRL_TRIANGLE) {
             printf("Preparing to restore NEAR..\n");
+            void* buf = malloc(0x100);
+            vshIoUmount(0x300, 0, 0, 0);
+            vshIoUmount(0x300, 1, 0, 0);
+            int ret = _vshIoMount(0x300, 0, 2, buf);
+            if (ret < 0)
+                printf("Mount error 0x%08X -> will probably error later\n", ret);
             sceIoMkdir(TEMP_UR0_PATH, 0777);
             removeDir(TEMP_UR0_PATH "app");
             sceIoMkdir(TEMP_UR0_PATH "app", 0777);
-            int ret = copyDir("vs0:app/NPXS10000/near_backup", TEMP_UR0_PATH "app");
-            if (ret < 0)
-                return ret;
+            ret = copyDir("vs0:app/NPXS10000/near_backup", TEMP_UR0_PATH "app");
+            if (ret < 0) {
+                COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", ret);
+                goto VXN_REBOOT;
+            }
             printf("Removing VitaDeploy..\n");
-            ret = call_syscall(0, 0, 0, syscall_id + 4);
-            cprintf("ioMountRW ret 0x%08X\n", ret);
             ret = removeDir("vs0:app/NPXS10000");
             if (ret < 0) {
-                printf("Failed 0x%08X, rebooting in 5s\n", ret);
-                sceKernelDelayThread(5 * 1000 * 1000);
-                scePowerRequestColdReset();
-                sceKernelDelayThread(2 * 1000 * 1000);
-                printf("Process is dead\n");
-                while (1) {};
+                COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", ret);
+                goto VXN_REBOOT;
             }
             printf("Restoring NEAR..\n");
             ret = copyDir(TEMP_UR0_PATH "app", "vs0:app/NPXS10000");
-            if (ret < 0)
-                printf("Failed 0x%08X\n", ret);
+            if (ret < 0) {
+                COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", ret);
+                goto VXN_REBOOT;
+            }
             printf("Removing the application database\n");
             sceIoRemove("ur0:shell/db/app.db");
             printf("Cleaning up..\n");
             removeDir(TEMP_UR0_PATH "app");
             printf("All done, rebooting in 5s\n");
-            sceKernelDelayThread(5 * 1000 * 1000);
-            scePowerRequestColdReset();
-            sceKernelDelayThread(2 * 1000 * 1000);
-            printf("Process is dead\n");
-            while (1) {};
+            goto VXN_REBOOT;
         }
     }
+    printf("Preparing vs0\n");
+    void* buf = malloc(0x100);
+    vshIoUmount(0x300, 0, 0, 0);
+    vshIoUmount(0x300, 1, 0, 0);
+    int res = _vshIoMount(0x300, 0, 2, buf);
+    if (res < 0)
+        printf("Mount error 0x%08X -> will probably error later\n", res);
     sceIoMkdir(TEMP_UR0_PATH, 0777);
     printf("Downloading vitadeploy\n");
     net(1);
-    int res = download_file(HEN_REPO_URL VDEP_VPK_FNAME, TEMP_UR0_PATH VDEP_VPK_FNAME, TEMP_UR0_PATH VDEP_VPK_FNAME "_tmp", 0);
-    if (res < 0)
-        return res;
+    res = download_file(HEN_REPO_URL VDEP_VPK_FNAME, TEMP_UR0_PATH VDEP_VPK_FNAME, TEMP_UR0_PATH VDEP_VPK_FNAME "_tmp", 0);
+    if (res < 0) {
+        COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", res);
+        goto VXN_REBOOT;
+    }
     net(0);
 
     printf("Extracting vpk\n");
     removeDir(TEMP_UR0_PATH "app");
     sceIoMkdir(TEMP_UR0_PATH "app", 0777);
     res = unzip(TEMP_UR0_PATH VDEP_VPK_FNAME, TEMP_UR0_PATH "app");
-    if (res < 0)
-        return res;
+    if (res < 0) {
+        COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", res);
+        goto VXN_REBOOT;
+    }
 
     printf("Backing up NEAR\n");
     res = copyDir("vs0:app/NPXS10000", TEMP_UR0_PATH "app/near_backup");
-    if (res < 0)
-        return res;
+    if (res < 0) {
+        COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", res);
+        goto VXN_REBOOT;
+    }
 
     printf("Preparing to replace near..\n");
     sceIoRemove(TEMP_UR0_PATH "app/sce_sys/param.sfo");
     sceIoRename(TEMP_UR0_PATH "app/sce_sys/vs.sfo", TEMP_UR0_PATH "app/sce_sys/param.sfo");
-    
-    res = call_syscall(0, 0, 0, syscall_id + 4);
-    cprintf("ioMountRW ret 0x%08X\n", res);
 
     printf("Replacing NEAR\n");
     res = removeDir("vs0:app/NPXS10000");
     cprintf("remove near : 0x%08X\n", res);
 
     res = copyDir(TEMP_UR0_PATH "app", "vs0:app/NPXS10000");
-    if (res < 0)
-        return res;
+    if (res < 0) {
+        COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s\n", res);
+        goto VXN_REBOOT;
+    }
 
     printf("Removing the application database\n");
     sceIoRemove("ur0:shell/db/app.db");
@@ -203,6 +218,7 @@ int vitadeploy_x_near(int syscall_id) {
     removeDir(TEMP_UR0_PATH "app");
 
     printf("All done, rebooting in 5s\n");
+VXN_REBOOT:
     sceKernelDelayThread(5 * 1000 * 1000);
     scePowerRequestColdReset();
     sceKernelDelayThread(2 * 1000 * 1000);
@@ -242,7 +258,8 @@ int install_henkaku(void) {
         if (ret < 0)
             return ret;
     }
-    COLORPRINTF(COLOR_GREEN, "All done\n");
+    COLORPRINTF(COLOR_GREEN, "All done\n\n");
+    COLORPRINTF(COLOR_PURPLE, "Using the \"Exit\" will launch henkaku\n");
     sceKernelDelayThread(2 * 1000 * 1000);
     return 0;
 }
@@ -263,6 +280,11 @@ void main_menu(int sel) {
 
 int _start(SceSize args, void* argp) {
     int syscall_id = *(uint16_t*)argp;
+
+    cprintf("preinit\n");
+    sceAppMgrDestroyOtherApp();
+    sceShellUtilInitEvents(0);
+    sceShellUtilLock(1);
 
     cprintf("loading PAF\n");
     int res = load_sce_paf();
@@ -285,7 +307,7 @@ int _start(SceSize args, void* argp) {
             } else if (sel == MENU_INSTALL_VDEP) {
                 res = install_vitadeploy_default();
                 if (res < 0) {
-                    COLORPRINTF(COLOR_RED, "FAILED: 0x%08X\n", res);
+                    COLORPRINTF(COLOR_RED, "\nFAILED: 0x%08X\n", res);
                     sceKernelDelayThread(3 * 1000 * 1000);
                 }
                 sel = 0;
@@ -294,7 +316,7 @@ int _start(SceSize args, void* argp) {
             } else if (sel == MENU_REPLACE_NEAR) {
                 res = vitadeploy_x_near(syscall_id);
                 if (res < 0) {
-                    COLORPRINTF(COLOR_RED, "FAILED: 0x%08X\n", res);
+                    COLORPRINTF(COLOR_RED, "\nFAILED: 0x%08X\n", res);
                     sceKernelDelayThread(3 * 1000 * 1000);
                 }
                 sel = 0;
@@ -305,7 +327,7 @@ int _start(SceSize args, void* argp) {
                 res = install_henkaku();
                 net(0);
                 if (res < 0) {
-                    COLORPRINTF(COLOR_RED, "FAILED: 0x%08X\n", res);
+                    COLORPRINTF(COLOR_RED, "\nFAILED: 0x%08X\n", res);
                     sceKernelDelayThread(3 * 1000 * 1000);
                 }
                 sel = 0;
@@ -318,7 +340,7 @@ int _start(SceSize args, void* argp) {
                 res = download_file(HEN_REPO_URL TAIHEN_C_FNAME, "ur0:tai/" TAIHEN_C_FNAME, "ur0:tai/" TAIHEN_C_FNAME "_tmp", 0);
                 net(0);
                 if (res < 0) {
-                    COLORPRINTF(COLOR_RED, "FAILED: 0x%08X\n", res);
+                    COLORPRINTF(COLOR_RED, "\nFAILED: 0x%08X\n", res);
                     sceKernelDelayThread(3 * 1000 * 1000);
                 } else {
                     COLORPRINTF(COLOR_GREEN, "All done\n");
@@ -378,6 +400,8 @@ EXIT:
 
     cprintf("unloading PAF\n");
     unload_sce_paf();
+
+    sceShellUtilUnlock(1);
 
     sceKernelExitProcess(0);
     return 0;

@@ -248,44 +248,19 @@ end:
 
     free(buf);
 
-    if (res_crc != exp_crc) {
+    if (ret >= 0 && res_crc != exp_crc) {
         printf("file checksum(CRC32) error!\n");
         return -1;
     }
 
-    if (tmp != NULL) {
+    if (ret >= 0 && tmp != NULL) {
         sceIoRemove(file);
         ret = sceIoRename(tmp, file);
         if (ret < 0)
-            printf("ud0 perms error!\n");
+            printf("fs perms error!\n");
     }
 
     return ret;
-}
-
-int remove(const char* path) {
-    SceUID dfd = sceIoDopen(path);
-    if (dfd >= 0) {
-        int res = 0;
-
-        do {
-            SceIoDirent dir;
-            sceClibMemset(&dir, 0, sizeof(SceIoDirent));
-
-            res = sceIoDread(dfd, &dir);
-            if (res > 0) {
-                char new_path[256];
-                sceClibSnprintf(new_path, sizeof(new_path), "%s/%s", path, dir.d_name);
-                res = remove(new_path);
-            }
-        } while (res > 0);
-
-        sceIoDclose(dfd);
-
-        return sceIoRmdir(path);
-    }
-
-    return sceIoRemove(path);
 }
 
 int load_sce_paf() {
