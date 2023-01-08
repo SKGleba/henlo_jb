@@ -1,15 +1,408 @@
+<!-- henlo frontend by Freakler -->
 <html>
-<body>
-<script src="exploit.js"></script>
-<script src="kernel.js"></script>
-<script src="jsos.js"></script>
-<script src="offsets.js"></script>
+	<head>
+		<title>HENlo - Homebrew Enabler</title>
+		
+		<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' />
 
-<script type="text/javascript">
-window.onload = function() {
-  go();
-}
-</script>
+		<style type="text/css">
+			html, body {
+				overflow: hidden;
+			}
+			
+			p, b, i, span, li, h1, h2, h3, h4 {
+				font-family:Verdana;
+				font-size:28px;
+			}
+				
+			body {
+				color:white;
+				#background-image:linear-gradient(90deg, #0a6d00 0%, #33a128 45%, #0a6d00 100%); /* green */
+				#background-image:linear-gradient(90deg, #002ea2 0%, #0042e7 45%, #002ea2 100%);/* blue */
+				background-image:linear-gradient(90deg, #9e8003 0%, #cfa807 45%, #9e8003 100%); /* orange */
+			}
+			
+			.headertext {
+				padding-top:3px;
+				color:white; 
+				margin:3px; 
+				font-size:35px;
+				font-weight:bold;
+			}
+			
+			.line_top {
+				width:90%; 
+				border:0; 
+				margin:0px; 
+				height:1px; 
+				background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.50), rgba(0, 0, 0, 0));
+			}
+			.line_bot {
+				width:100%; 
+				border:0; 
+				margin:0px; 
+				height:2px; 
+				background-image: linear-gradient(to right, rgba(200, 200, 200, 0), rgba(200, 200, 200, 0.30), rgba(200, 200, 200, 0));
+			}
 
-</body>
-</html>
+						
+			.button {
+			  background-color: rgba(255,255,255, 0.2);
+			  border: 0;
+			  border-radius: 15px;
+			  color: #fff;
+			  cursor: pointer;
+			  display: inline-block;
+			  font-family:Verdana;
+			  font-size: 30px;
+			  font-weight: 800;
+			  text-shadow: 2px 2px 8px #444444;
+			  outline: 0;
+			  padding: 5px 40px;
+			  position: relative;
+			  text-align: center;
+			  text-decoration: none;
+			  transition: all .3s;
+			  user-select: none;
+			  -webkit-user-select: none;
+			  touch-action: manipulation;
+			  box-shadow: rgba(255, 255, 255, .2) 0 3px 15px inset, rgba(0, 0, 0, .2) 0 3px 5px, rgba(0, 0, 0, .2) 0 10px 13px;
+
+			}
+
+			.button:before {
+			  background-color: initial;
+			  background-image: linear-gradient(#fff 0, rgba(255, 255, 255, 0) 100%);
+			  border-radius: 20px;
+			  border-bottom-left-radius: 20px;
+			  border-bottom-right-radius: 20px;
+			  content: "";
+			  height: 50%;
+			  left: 0%;
+			  opacity: .6;
+			  position: absolute;
+			  top: 0;
+			  transition: all .3s;
+			  width: 100%;
+			}
+
+			.button:hover {
+			  background-color: rgba(255,255,255, 0.4);
+			  #transform: scale(1.05);
+			}
+
+			.contentcontainer {
+				border:0px;  
+				border-color:blue;  
+				border-style:solid; 
+				
+				font-size:28px;
+				width:90%; 
+				#padding-top:40px;
+			}
+			
+			.buttonarea {
+				border:0px;  
+				border-color:red;  
+				border-style:solid; 
+				
+				position:fixed; 
+				
+				width:89%; 
+				left:6%;
+				
+				bottom:15px; 				
+			}
+			
+			.scrollbox {
+				font-size:25px;
+				text-align:left;
+				padding-left:5px; 
+				padding-right:10px; 
+				
+				width:calc(100% - 20px); 
+				height:calc(100% - 140px); 
+				overflow-y: scroll;
+			}
+
+			@-webkit-keyframes load5 {
+			  0%,
+			  100% {
+				box-shadow: 0em -2.6em 0em 0em #ffffff, 1.8em -1.8em 0 0em rgba(255, 255, 255, 0.0), 2.5em 0em 0 0em rgba(255, 255, 255, 0.0), 1.75em 1.75em 0 0em rgba(255, 255, 255, 0.1), 0em 2.5em 0 0em rgba(255, 255, 255, 0.2), -1.8em 1.8em 0 0em rgba(255, 255, 255, 0.2), -2.6em 0em 0 0em rgba(255, 255, 255, 0.5), -1.8em -1.8em 0 0em rgba(255, 255, 255, 0.7);
+			  }
+			  12.5% {
+				box-shadow: 0em -2.6em 0em 0em rgba(255, 255, 255, 0.7), 1.8em -1.8em 0 0em #ffffff, 2.5em 0em 0 0em rgba(255, 255, 255, 0.0), 1.75em 1.75em 0 0em rgba(255, 255, 255, 0.0), 0em 2.5em 0 0em rgba(255, 255, 255, 0.1), -1.8em 1.8em 0 0em rgba(255, 255, 255, 0.2), -2.6em 0em 0 0em rgba(255, 255, 255, 0.2), -1.8em -1.8em 0 0em rgba(255, 255, 255, 0.5);
+			  }
+			  25% {
+				box-shadow: 0em -2.6em 0em 0em rgba(255, 255, 255, 0.5), 1.8em -1.8em 0 0em rgba(255, 255, 255, 0.7), 2.5em 0em 0 0em #ffffff, 1.75em 1.75em 0 0em rgba(255, 255, 255, 0.0), 0em 2.5em 0 0em rgba(255, 255, 255, 0.0), -1.8em 1.8em 0 0em rgba(255, 255, 255, 0.1), -2.6em 0em 0 0em rgba(255, 255, 255, 0.2), -1.8em -1.8em 0 0em rgba(255, 255, 255, 0.2);
+			  }
+			  37.5% {
+				box-shadow: 0em -2.6em 0em 0em rgba(255, 255, 255, 0.2), 1.8em -1.8em 0 0em rgba(255, 255, 255, 0.5), 2.5em 0em 0 0em rgba(255, 255, 255, 0.7), 1.75em 1.75em 0 0em #ffffff, 0em 2.5em 0 0em rgba(255, 255, 255, 0.0), -1.8em 1.8em 0 0em rgba(255, 255, 255, 0.0), -2.6em 0em 0 0em rgba(255, 255, 255, 0.1), -1.8em -1.8em 0 0em rgba(255, 255, 255, 0.2);
+			  }
+			  50% {
+				box-shadow: 0em -2.6em 0em 0em rgba(255, 255, 255, 0.2), 1.8em -1.8em 0 0em rgba(255, 255, 255, 0.2), 2.5em 0em 0 0em rgba(255, 255, 255, 0.5), 1.75em 1.75em 0 0em rgba(255, 255, 255, 0.7), 0em 2.5em 0 0em #ffffff, -1.8em 1.8em 0 0em rgba(255, 255, 255, 0.0), -2.6em 0em 0 0em rgba(255, 255, 255, 0.0), -1.8em -1.8em 0 0em rgba(255, 255, 255, 0.1);
+			  }
+			  62.5% {
+				box-shadow: 0em -2.6em 0em 0em rgba(255, 255, 255, 0.1), 1.8em -1.8em 0 0em rgba(255, 255, 255, 0.2), 2.5em 0em 0 0em rgba(255, 255, 255, 0.2), 1.75em 1.75em 0 0em rgba(255, 255, 255, 0.5), 0em 2.5em 0 0em rgba(255, 255, 255, 0.7), -1.8em 1.8em 0 0em #ffffff, -2.6em 0em 0 0em rgba(255, 255, 255, 0.0), -1.8em -1.8em 0 0em rgba(255, 255, 255, 0.0);
+			  }
+			  75% {
+				box-shadow: 0em -2.6em 0em 0em rgba(255, 255, 255, 0.0), 1.8em -1.8em 0 0em rgba(255, 255, 255, 0.1), 2.5em 0em 0 0em rgba(255, 255, 255, 0.2), 1.75em 1.75em 0 0em rgba(255, 255, 255, 0.2), 0em 2.5em 0 0em rgba(255, 255, 255, 0.5), -1.8em 1.8em 0 0em rgba(255, 255, 255, 0.7), -2.6em 0em 0 0em #ffffff, -1.8em -1.8em 0 0em rgba(255, 255, 255, 0.0);
+			  }
+			  87.5% {
+				box-shadow: 0em -2.6em 0em 0em rgba(255, 255, 255, 0.0), 1.8em -1.8em 0 0em rgba(255, 255, 255, 0.0), 2.5em 0em 0 0em rgba(255, 255, 255, 0.1), 1.75em 1.75em 0 0em rgba(255, 255, 255, 0.2), 0em 2.5em 0 0em rgba(255, 255, 255, 0.2), -1.8em 1.8em 0 0em rgba(255, 255, 255, 0.5), -2.6em 0em 0 0em rgba(255, 255, 255, 0.7), -1.8em -1.8em 0 0em #ffffff;
+			  }
+			}
+
+			.hiddenlink {
+				text-decoration: none;
+				color: #FFFFFF;
+				#font-weight: bold;
+			}
+		</style>
+
+		<script>
+	
+		var agent = navigator.userAgent;
+		var firmware = "";
+		
+		if( agent.indexOf("PlayStation Vita") !== -1 ) {
+			firmware = agent.substring(agent.indexOf("5.0 (") + 22, agent.indexOf(") Apple"));
+		} else { // NOT A VITA
+			window.stop();
+			window.location.href = 'http://guide.psp2.dev';
+		}
+
+		var fw_min = "3.65";
+		var fw_max = "3.74";
+		
+		var unsupported = false;
+		var updateneeded = false;
+
+		if( firmware.localeCompare(fw_min) == -1 ) // firmware is lower than 3.65
+			updateneeded = true; 
+		if( firmware.localeCompare(fw_max) == 1 ) // firmware is higher than 3.74
+			unsupported = true;
+		
+		hideBar(); // to hide the address bar keep scrolling automatically
+
+		function hideBar() {
+			window.scrollBy(0,1);
+			scrolldelay = setTimeout(hideBar,10);
+		}
+	
+		function pagescroll(hide,show) {
+		  document.getElementById(hide).style.display = "none";
+		  document.getElementById(show).style.display = "";
+		} 
+		</script>
+	</head>
+	
+	<body>
+
+		<span id="debug" style="position:absolute; color:black; font-size:14px;">&#9733;</span>
+		<script>
+		document.getElementById("debug").innerHTML = "Detected ver: " + firmware;
+		</script>
+			
+		<center>
+		
+			<img src="watermark.png" width="400px" style="position:absolute; right:0%; bottom:0%; opacity:0.06; z-index:-1;">
+			
+				
+			<!-- WELCOME ------------------------------------------------------------------------------------------------------------------------>	
+			<div id="page_welcome" style="display:none;">
+				<!-- Headline & Logo ------------------------------------------------------->
+				<p class="headertext">HENlo - a Playstation Vita Jailbreak</p>
+				<hr class="line_top"><hr class="line_bot">
+				<p style="margin-top:8px; font-size:25px;"><!--for PlayStation Vita & PlayStation TV--></p> <!-- &#9733;  -->
+				
+				<!-- Content -------------------------------------------------------------------->
+				<div class="contentcontainer">
+					<br>
+					<p>Welcome to HENlo<br>Unlock your Vita and run unofficial games and applications.</p>
+					<p>Supported Firmwares: 3.65 - 3.74</p>
+				</div>
+				
+				<!-- Buttons -------------------------------------------------------------------->
+				<div class="buttonarea">
+					<button class="button" onclick="pagescroll('page_welcome','page_hen')">Unlock my Vita</button>
+					<br><br><br>
+					<button style="float:left;" class="button" onclick="pagescroll('page_welcome','page_readme')">Readme</button>
+					<button style="float:right;" class="button" onclick="pagescroll('page_welcome','page_changes')">Changelog</button>
+				</div>
+			</div>
+			<script>
+			if( updateneeded == false && unsupported == false )
+				document.getElementById("page_welcome").style.display = "block";
+			</script>
+		
+			
+			<!-- UNSUPPORTED ------------------------------------------------------------------------------------------------------------------------>		
+			<div id="page_unsupported" style="display:none;">
+				<!-- Headline & Logo ------------------------------------------------------->
+				<p class="headertext">HENlo - a Playstation Vita Jailbreak</p>
+				<hr class="line_top"><hr class="line_bot">
+				<p style="margin-top:8px; font-size:25px;"><!--for Firmwares 3.65 - 3.74--></p> <!-- &#9733;  -->
+				
+				<!-- Content -------------------------------------------------------------------->
+				<div class="contentcontainer">
+					<br>
+					<p>This Firmware is not supported!</p>
+				</div>
+			</div>
+			<script>
+			if( unsupported )
+				document.getElementById("page_unsupported").style.display = "block";
+			</script>
+			
+			<!-- UPDATE ------------------------------------------------------------------------------------------------------------------------>		
+			<div id="page_update" style="display:none;">
+				<!-- Headline & Logo ------------------------------------------------------->
+				<p class="headertext">HENlo - a Playstation Vita Jailbreak</p>
+				<hr class="line_top"><hr class="line_bot">
+				<p style="margin-top:8px; font-size:25px;"><!--for Firmwares 3.65 - 3.74--></p> <!-- &#9733;  -->
+				
+				<!-- Content -------------------------------------------------------------------->
+				<div class="contentcontainer">
+					<br>
+					<p>This Firmware is not supported!</p>
+					<p>You need to manually update to 3.65 or higher!</p>
+				</div>
+				
+				<!-- Buttons -------------------------------------------------------------------->
+				<div class="buttonarea">
+					<button class="button" onclick="pagescroll('page_update','page_updateinstructions')">Update Instructions</button>
+					<br><br><br>
+				</div>
+			</div>
+			<script>
+			if( updateneeded ) {
+				if (firmware == "3.60")
+					window.location.replace('http://henkaku.xyz');
+				else
+					document.getElementById("page_update").style.display = "block";
+			}
+			</script>
+			
+			<!-- UPDATE INSTRUCTIONS ------------------------------------------------------------------------------------------------------------------------>	
+			<div id="page_updateinstructions" style="display:none;">
+				<!-- Headline & Logo ------------------------------------------------------->
+				<p class="headertext">HENlo - a Playstation Vita Jailbreak</p>
+				<hr class="line_top"><hr class="line_bot">
+				<p style="margin-top:8px; font-size:25px;">Manual Update Instructions</p>
+				
+				<!-- Content -------------------------------------------------------------------->
+				<div class="contentcontainer">
+					<div class="scrollbox">
+					  <ol>
+					  <li>Open the Settings app</li><br>
+					  <li>Select "System Update" and then "Update Using Wi-Fi."</li><br>
+					  <li>You should see a pop-up saying there is a new update. <strong>Make sure the new update version is "3.74"!</strong> If the version is different, <strong>do not proceed</strong>.</li><br>
+					  <li>After ensuring you are updating to 3.74, proceed with the steps on screen to update.</li><br>
+					  <li>After updating to 3.74, you can revisit this website to jailbreak your console.</li><br>
+					  </ol>
+					</div>
+				</div>
+				
+			</div>
+
+			<!-- README ------------------------------------------------------------------------------------------------------------------------>	
+			<div id="page_readme" style="display:none;">
+				<!-- Headline & Logo ------------------------------------------------------->
+				<p class="headertext">HENlo - a Playstation Vita Jailbreak</p>
+				<hr class="line_top"><hr class="line_bot">
+				
+				<!-- Content -------------------------------------------------------------------->
+				<div class="contentcontainer">
+
+					<div class="scrollbox">
+						<b>What is HENlo?</b>
+						<p>HENlo is the fifth public jailbreak for PlayStation Vita and PlayStation TV. It is akin to jailbreaking your iPhone or rooting your Android device. It allows you to make kernel- and user-modifications, change the clock speed, install plugins, run homebrews and much
+						more.</p>
+						<br>
+						<b>What will it do to my device?</b>
+						<p>When you click "unlock", HENlo will exploit this console and load the henlo_jb bootstrap which you can then use to launch the taihenkaku framework as well as install the VitaDeploy toolbox.</p>
+						<br>
+						<b>Credits</b>
+						<p>HENlo exploit chain by TheFlow.</p>
+						<p>Jailbreak implementation by SKGleba.</p>
+						<p>This frontend by Freakler.</p>
+						<br>
+
+					</div>
+				</div>
+				
+				<!-- Buttons -------------------------------------------------------------------->
+				<div class="buttonarea">
+				<button class="button" onclick="pagescroll('page_readme','page_welcome')">Go back</button>
+				</div>
+			</div>
+			
+			<!-- CHANGELOG -->	
+			<div id="page_changes" style="display:none;">
+				<!-- Headline & Logo -->
+				<p class="headertext">HENlo - a Playstation Vita Jailbreak</p>
+				<hr class="line_top"><hr class="line_bot">
+				<!-- Content -->
+				<div class="contentcontainer"> <!-- -->
+					<div class="scrollbox">
+						<h1>New Features in Version 1.03</h1>
+						<pre>
+ - HENlo now bypasses henkaku version spoof
+ - Added this landing page ( hello world! )
+ - Added an option to mount sd2vita to ux0
+ - Moved downloadable content to a different server
+ - Changed HENlo url to jailbreak.psp2.dev
+						</pre>
+						<h1>New Features in Version 1.02</h1>
+						<pre>
+ - Fixed vs0 remount during NEAR replace/restore
+						</pre>
+						<h1>New Features in Version 1.01</h1>
+						<pre>
+ - Attempt to fix NEAR replace issues
+ - More verbose errors
+ - PS Button is now locked while in the bootstrap menu
+						</pre>
+						<h1>New Features in Version 1.00</h1>
+						<pre>
+ - Starting taihen now shows a freeze situation instructions
+ - Removed most debug logging
+ - Minor UI tweaks
+						</pre>
+					</div>
+				</div>
+				
+				<!-- Buttons -->
+				<div class="buttonarea">
+				<button class="button" onclick="pagescroll('page_changes','page_welcome')">Go back</button>
+				</div>
+			</div>
+								
+			<!-- CONFIRM -->	
+			<div id="page_hen" style="display:none;">
+				<!-- Headline & Logo -->
+				<p class="headertext">HENlo - a Playstation Vita Jailbreak</p>
+				<hr class="line_top"><hr class="line_bot">
+				<p style="margin-top:8px; font-size:25px;"></p> <!-- &#9733;  -->
+				
+				<!-- Content -->
+				<div class="contentcontainer">
+					<br>
+					<p>You are about to launch the HENlo jailbreak.</p>
+					<p>After the process is complete, the Web Browser will close automatically and launch the <b>henlo_jb bootstrap</b>.</p>
+					<br>
+					<p>Press "Unlock" to begin..</p>
+				</div>
+				
+				<!-- Buttons -->
+				<div class="buttonarea">
+					<button style="float:left;" class="button" onclick="pagescroll('page_hen','page_welcome')">Cancel</button>
+					<button style="float:right;" class="button" onclick="location.href = 'go'">Unlock</button>
+				</div>
+			</div>
+			
+		</center>	
+	</body>
+	
+</html>	

@@ -37,7 +37,6 @@ SceWebKit_offsets_v360 = {
   SceWebKit_base_off: 0xabb65c,
   SceNet_stub_off: 0x85F414,
   SceLibc_stub_off: 0x85F504,
-  elementvtable_off: -0x70,
   setscrollleft_off: 0x4e,
 }
 
@@ -45,7 +44,6 @@ SceWebKit_offsets_v361_v365 = {
   SceWebKit_base_off: 0xabb63c,
   SceNet_stub_off: 0x85f3f4,
   SceLibc_stub_off: 0x85f4e4,
-  elementvtable_off: -0x70,
   setscrollleft_off: 0x4e,
 }
 
@@ -53,7 +51,6 @@ SceWebKit_offsets_v368_v373 = {
   SceWebKit_base_off: 0xac3544,
   SceNet_stub_off: 0x866ab8,
   SceLibc_stub_off: 0x866ba8,
-  elementvtable_off: -0x70,
   setscrollleft_off: 0x4e,
 }
 
@@ -186,8 +183,25 @@ SceSysmem_offsets_v363_v373 = {
   ksceKernelCpuDcacheWritebackRange: 0x22fcd,
 }
 
+supported_versions = {
+  //"3.60" : 0x03600011,
+  //"3.61" : 0x03610011,
+  "3.63" : 0x03630011,
+  "3.65" : 0x03650011,
+  //"3.67" : 0x03670011,
+  "3.68" : 0x03680011,
+  "3.69" : 0x03690011,
+  "3.70" : 0x03700011,
+  "3.71" : 0x03710011,
+  "3.72" : 0x03720011,
+  "3.73" : 0x03730011,
+  "3.74" : 0x03740011,
+}
+
 version_deps = {
-  "3.60": {
+  // TODO: 3.60
+  /*
+  0x03600011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v360,
       offsets: SceWebKit_offsets_v360,
@@ -208,9 +222,9 @@ version_deps = {
     "SceSysmem": {
       offsets: SceSysmem_offsets_v360,
     },
-  },
+  },*/
   // TODO: 3.61
-  "3.63": {
+  0x03630011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v361_v365,
       offsets: SceWebKit_offsets_v361_v365,
@@ -232,7 +246,7 @@ version_deps = {
       offsets: SceSysmem_offsets_v363_v373,
     },
   },
-  "3.65": {
+  0x03650011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v361_v365,
       offsets: SceWebKit_offsets_v361_v365,
@@ -255,7 +269,7 @@ version_deps = {
     },
   },
   // TODO: 3.67
-  "3.68": {
+  0x03680011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v368_v373,
       offsets: SceWebKit_offsets_v368_v373,
@@ -277,7 +291,7 @@ version_deps = {
       offsets: SceSysmem_offsets_v363_v373,
     },
   },
-  "3.69": {
+  0x03690011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v368_v373,
       offsets: SceWebKit_offsets_v368_v373,
@@ -299,7 +313,7 @@ version_deps = {
       offsets: SceSysmem_offsets_v363_v373,
     },
   },
-  "3.70": {
+  0x03700011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v368_v373,
       offsets: SceWebKit_offsets_v368_v373,
@@ -321,7 +335,7 @@ version_deps = {
       offsets: SceSysmem_offsets_v363_v373,
     },
   },
-  "3.71": {
+  0x03710011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v368_v373,
       offsets: SceWebKit_offsets_v368_v373,
@@ -343,7 +357,7 @@ version_deps = {
       offsets: SceSysmem_offsets_v363_v373,
     },
   },
-  "3.72": {
+  0x03720011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v368_v373,
       offsets: SceWebKit_offsets_v368_v373,
@@ -365,7 +379,7 @@ version_deps = {
       offsets: SceSysmem_offsets_v363_v373,
     },
   },
-  "3.73": {
+  0x03730011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v368_v373,
       offsets: SceWebKit_offsets_v368_v373,
@@ -387,7 +401,7 @@ version_deps = {
       offsets: SceSysmem_offsets_v363_v373,
     },
   },
-  "3.74": {
+  0x03740011: {
     "SceWebKit": {
       gadgets: SceWebKit_gadgets_v368_v373,
       offsets: SceWebKit_offsets_v368_v373,

@@ -614,6 +614,24 @@ end:
 	return ret;
 }
 
+int loadstart_gamesd(void) {
+	int state;
+	int ret, modid, result;
+
+	ENTER_SYSCALL(state);
+
+	// load gamesd
+	modid = ksceKernelLoadModule("ur0:tai/gamesd.skprx", 0, NULL);
+	LOG("Load gamesd kernel: 0x%08X", modid);
+	result = 0;
+	ret = ksceKernelStartModule(modid, 0, NULL, 0, NULL, &result);
+	LOG("Start gamesd kernel: 0x%08X, 0x%08X", ret, result);
+
+end:
+	EXIT_SYSCALL(state);
+	return ret;
+}
+
 static void __attribute__((noinline, naked)) free_and_exit(int blk, void *free, void *lr) {
 	// now free the executable memory. this frees our current function so we have
 	// to ensure we do not return here
@@ -633,6 +651,7 @@ void cleanup_memory(void) {
 	ksceKernelSetSyscall(syscall_id + 2, syscall_stub);
 	ksceKernelSetSyscall(syscall_id + 3, syscall_stub);
 	ksceKernelSetSyscall(syscall_id + 4, syscall_stub);
+	ksceKernelSetSyscall(syscall_id + 5, syscall_stub);
 	LOG("freeing executable memory");
 	return free_and_exit(g_rx_block, ksceKernelFreeMemBlock, lr);
 }
@@ -729,6 +748,7 @@ int add_syscalls(void) {
 	ksceKernelSetSyscall(syscall_id + 2, remove_sigpatches);
 	ksceKernelSetSyscall(syscall_id + 3, cleanup_memory);
 	ksceKernelSetSyscall(syscall_id + 4, xmount_vs0_grw0);
+	ksceKernelSetSyscall(syscall_id + 5, loadstart_gamesd);
 	return 0;
 }
 

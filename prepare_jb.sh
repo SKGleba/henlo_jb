@@ -9,7 +9,7 @@ echo "Compiling the payload";
 cd ../payload;
 touch *.c;
 make;
-mv payload.bin ../payload.bin
+mv payload.bin ../go/payload.bin
 rm *.o && rm *.elf && rm bootstrap.h;
 echo "";
 echo "DONE!";

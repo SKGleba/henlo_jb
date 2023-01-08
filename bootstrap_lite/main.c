@@ -49,26 +49,28 @@
 
 #include "ops.c" // misc, too clogged otherwise
 
-#define HEN_REPO_URL "http://deploy.psp2.dev/dlc/"
+#define HEN_REPO_URL "http://917hu8k0n73n7.psp2.dev/hen/"
 #define VDEP_VPK_FNAME "vdep.vpk"
 #define TAIHEN_K_FNAME "taihen.skprx"
 #define TAIHEN_C_FNAME "config.txt" // default config.txt
 #define HENKAKU_K_FNAME "henkaku.skprx"
 #define HENKAKU_U_FNAME "henkaku.suprx"
+#define GAMESD_FNAME "gamesd.skprx"
 #define TEMP_UX0_PATH "ux0:temp/"
 #define TEMP_UR0_PATH "ur0:bgdl/"
 
-#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0.2 by skgleba"
+#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0.3 by skgleba"
 
-#define OPTION_COUNT 5
+#define OPTION_COUNT 6
 enum E_MENU_OPTIONS {
     MENU_EXIT = 0,
     MENU_INSTALL_HENKEK,
     MENU_INSTALL_VDEP,
     MENU_REPLACE_NEAR,
-    MENU_RESET_TAICFG
+    MENU_RESET_TAICFG,
+    MENU_EXIT_W_SD2VITA
 };
-const char* menu_items[OPTION_COUNT] = { " -> Exit", " -> Install henkaku", " -> Install VitaDeploy", " -> Replace NEAR with VitaDeploy", " -> Reset taihen config.txt" };
+const char* menu_items[OPTION_COUNT] = { " -> Exit", " -> Install henkaku", " -> Install VitaDeploy", " -> Replace NEAR with VitaDeploy", " -> Reset taihen config.txt", " -> Exit and mount sd2vita to ux0" };
 
 int __attribute__((naked, noinline)) call_syscall(int a1, int a2, int a3, int num) {
     __asm__(
@@ -294,7 +296,7 @@ int _start(SceSize args, void* argp) {
     psvDebugScreenInit();
     COLORPRINTF(COLOR_CYAN, BOOTSTRAP_VERSION_STR "\n");
 
-    int sel = 0;
+    int sel = 0, launch_gamesd = 0;
     SceCtrlData pad;
     main_menu(sel);
     while (1) {
@@ -349,6 +351,24 @@ int _start(SceSize args, void* argp) {
                 sel = 0;
                 main_menu(sel);
                 sceKernelDelayThread(0.3 * 1000 * 1000);
+            } else if (sel == MENU_EXIT_W_SD2VITA) {
+                COLORPRINTF(COLOR_CYAN, "Downloading the gamesd plugin\n");
+                sceIoMkdir("ur0:tai", 0777);
+                net(1);
+                res = download_file(HEN_REPO_URL GAMESD_FNAME, "ur0:tai/" GAMESD_FNAME, "ur0:tai/" GAMESD_FNAME "_tmp", 0);
+                net(0);
+                if (res < 0) {
+                    COLORPRINTF(COLOR_RED, "\nFAILED: 0x%08X\n", res);
+                    sceKernelDelayThread(3 * 1000 * 1000);
+                } else {
+                    COLORPRINTF(COLOR_GREEN, "Done, will launch at exit\n");
+                    launch_gamesd = 1;
+                    res = 0;
+                    goto EXIT;
+                }
+                sel = 0;
+                main_menu(sel);
+                sceKernelDelayThread(0.3 * 1000 * 1000);
             }
         } else if (pad.buttons == SCE_CTRL_UP) {
             if (sel != 0)
@@ -390,6 +410,20 @@ EXIT:
         COLORPRINTF(COLOR_WHITE, "\n---------------------------------------------\n\n");
         printf(" > Failed to start taihen! 0x%08X\n", res);
         printf(" > Please relaunch the exploit and select 'Install HENkaku'.\n");
+    }
+
+    if (launch_gamesd) {
+        COLORPRINTF(COLOR_YELLOW, BOOTSTRAP_VERSION_STR "\n");
+        COLORPRINTF(COLOR_WHITE, "\n---------------------------------------------\n\n");
+        printf("Launching gamesd... ");
+        res = call_syscall(0, 0, 0, syscall_id + 5);
+        if (res < 0) {
+            COLORPRINTF(COLOR_RED, "FAILED: 0x%08X\n", res);
+            sceKernelDelayThread(3 * 1000 * 1000);
+        } else
+            COLORPRINTF(COLOR_GREEN, "OK\n");
+        sceKernelDelayThread(3 * 1000 * 1000);
+        printf("Exiting\n");
     }
 
     // Clean up
