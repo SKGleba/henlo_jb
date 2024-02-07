@@ -50,8 +50,7 @@
 
 #include "ops.c" // misc, too clogged otherwise
 
-// #define HEN_REPO_URL "http://917hu8k0n73n7.psp2.dev/hen/"
-#define HEN_REPO_URL "http://192.168.50.62:8888/hen/"
+#define HEN_REPO_URL "http://917hu8k0n73n7.psp2.dev/hen/"
 #define VDEP_VPK_FNAME "vdep.vpk"
 #define UPDB_VPK_FNAME "updb.vpk"
 #define TAIHEN_K_FNAME "taihen.skprx"
@@ -69,7 +68,7 @@ enum E_MENU_OPTIONS {
     MENU_EXIT = 0,
     MENU_INSTALL_HENKEK,
     MENU_INSTALL_VDEP,
-    MENU_VDEP_REPLACE_NEAR,
+    MENU_REPLACE_NEAR,
     MENU_UNBLOCK_UPDATES,
     MENU_RESET_TAICFG,
     MENU_EXIT_W_SD2VITA
@@ -359,7 +358,7 @@ int _start(SceSize args, void* argp) {
                 sel = 0;
                 main_menu(sel);
                 sceKernelDelayThread(0.3 * 1000 * 1000);
-            } else if (sel == MENU_VDEP_REPLACE_NEAR) {
+            } else if (sel == MENU_REPLACE_NEAR) {
                 res = vitadeploy_x_near(syscall_id);
                 if (res < 0) {
                     COLORPRINTF(COLOR_RED, "\nFAILED: 0x%08X\n", res);
