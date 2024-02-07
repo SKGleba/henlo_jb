@@ -52,7 +52,6 @@
 
 #define HEN_REPO_URL "http://917hu8k0n73n7.psp2.dev/hen/"
 #define VDEP_VPK_FNAME "vdep.vpk"
-#define UPDB_VPK_FNAME "updb.vpk"
 #define TAIHEN_K_FNAME "taihen.skprx"
 #define TAIHEN_C_FNAME "config.txt" // default config.txt
 #define HENKAKU_K_FNAME "henkaku.skprx"
