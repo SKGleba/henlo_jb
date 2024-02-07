@@ -142,6 +142,16 @@ int removeDir(const char* path) {
     return 1;
 }
 
+int vshIoMount(int id, const char *path, int permission, int a4, int a5, int a6) {
+    uint32_t buf[3];   
+
+    buf[0] = a4;
+    buf[1] = a5;
+    buf[2] = a6;  
+      
+    return _vshIoMount(id, path, permission, buf);
+}
+
 void net(int init) {
     if (init) {
         sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
