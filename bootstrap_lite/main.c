@@ -49,8 +49,10 @@
 
 #include "ops.c" // misc, too clogged otherwise
 
-#define HEN_REPO_URL "http://917hu8k0n73n7.psp2.dev/hen/"
+// #define HEN_REPO_URL "http://917hu8k0n73n7.psp2.dev/hen/"
+#define HEN_REPO_URL "http://192.168.50.62:8888/hen/"
 #define VDEP_VPK_FNAME "vdep.vpk"
+#define UPDB_VPK_FNAME "updb.vpk"
 #define TAIHEN_K_FNAME "taihen.skprx"
 #define TAIHEN_C_FNAME "config.txt" // default config.txt
 #define HENKAKU_K_FNAME "henkaku.skprx"
@@ -61,16 +63,18 @@
 
 #define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0.4 by skgleba"
 
-#define OPTION_COUNT 6
+#define OPTION_COUNT 8
 enum E_MENU_OPTIONS {
     MENU_EXIT = 0,
     MENU_INSTALL_HENKEK,
     MENU_INSTALL_VDEP,
-    MENU_REPLACE_NEAR,
+    MENU_INSTALL_UPDB,
+    MENU_VDEP_REPLACE_NEAR,
+    MENU_UPDB_REPLACE_NEAR,
     MENU_RESET_TAICFG,
     MENU_EXIT_W_SD2VITA
 };
-const char* menu_items[OPTION_COUNT] = { "Exit", "Install henkaku", "Install VitaDeploy", "Replace NEAR with VitaDeploy", "Reset taihen config.txt", "Exit and mount sd2vita to ux0" };
+const char* menu_items[OPTION_COUNT] = { "Exit", "Install henkaku", "Install VitaDeploy", "Install UpdateUnblocker", "Replace NEAR with VitaDeploy", "Replace NEAR with UpdateUnblocker", "Reset taihen config.txt", "Exit and mount sd2vita to ux0" };
 
 int __attribute__((naked, noinline)) call_syscall(int a1, int a2, int a3, int num) {
     __asm__(
@@ -104,6 +108,36 @@ int install_vitadeploy_default() {
     removeDir(TEMP_UX0_PATH "app");
     sceIoMkdir(TEMP_UX0_PATH "app", 0777);
     res = unzip(TEMP_UX0_PATH VDEP_VPK_FNAME, TEMP_UX0_PATH "app");
+    if (res < 0)
+        return res;
+
+    COLORPRINTF(COLOR_CYAN, "Promoting app\n");
+    res = promoteApp(TEMP_UX0_PATH "app");
+    if (res < 0)
+        return res;
+
+    COLORPRINTF(COLOR_GREEN, "All done\n");
+    sceKernelDelayThread(2 * 1000 * 1000);
+
+    return 0;
+}
+
+int install_updateunblocker_default() {
+    sceIoMkdir(TEMP_UX0_PATH, 0777);
+    COLORPRINTF(COLOR_CYAN, "Downloading updateunblocker\n");
+    net(1);
+    int res = download_file(HEN_REPO_URL UPDB_VPK_FNAME, TEMP_UX0_PATH UPDB_VPK_FNAME, TEMP_UX0_PATH UPDB_VPK_FNAME "_tmp", 0);
+    if (res < 0) {
+        if ((uint32_t)res == 0x80010013)
+            printf("Could not open file for write, is ux0 present?\n");
+        return res;
+    }
+    net(0);
+
+    COLORPRINTF(COLOR_CYAN, "Extracting vpk\n");
+    removeDir(TEMP_UX0_PATH "app");
+    sceIoMkdir(TEMP_UX0_PATH "app", 0777);
+    res = unzip(TEMP_UX0_PATH UPDB_VPK_FNAME, TEMP_UX0_PATH "app");
     if (res < 0)
         return res;
 
@@ -317,7 +351,7 @@ int _start(SceSize args, void* argp) {
                 sel = 0;
                 main_menu(sel);
                 sceKernelDelayThread(0.3 * 1000 * 1000);
-            } else if (sel == MENU_REPLACE_NEAR) {
+            } else if (sel == MENU_VDEP_REPLACE_NEAR) {
                 res = vitadeploy_x_near(syscall_id);
                 if (res < 0) {
                     COLORPRINTF(COLOR_RED, "\nFAILED: 0x%08X\n", res);
