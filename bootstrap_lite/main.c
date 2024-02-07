@@ -18,6 +18,7 @@
 #include <psp2/net/netctl.h>
 #include <psp2/io/stat.h>
 #include <psp2/io/dirent.h>
+#include <psp2/vshbridge.h>
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -63,18 +64,17 @@
 
 #define BOOTSTRAP_VERSION_STR "henlo-bootstrap v1.0.4 by skgleba"
 
-#define OPTION_COUNT 8
+#define OPTION_COUNT 7
 enum E_MENU_OPTIONS {
     MENU_EXIT = 0,
     MENU_INSTALL_HENKEK,
     MENU_INSTALL_VDEP,
-    MENU_INSTALL_UPDB,
     MENU_VDEP_REPLACE_NEAR,
-    MENU_UPDB_REPLACE_NEAR,
+    MENU_UNBLOCK_UPDATES,
     MENU_RESET_TAICFG,
     MENU_EXIT_W_SD2VITA
 };
-const char* menu_items[OPTION_COUNT] = { "Exit", "Install henkaku", "Install VitaDeploy", "Install UpdateUnblocker", "Replace NEAR with VitaDeploy", "Replace NEAR with UpdateUnblocker", "Reset taihen config.txt", "Exit and mount sd2vita to ux0" };
+const char* menu_items[OPTION_COUNT] = { "Exit", "Install henkaku", "Install VitaDeploy", "Replace NEAR with VitaDeploy", "Unblock Updates", "Reset taihen config.txt", "Exit and mount sd2vita to ux0" };
 
 int __attribute__((naked, noinline)) call_syscall(int a1, int a2, int a3, int num) {
     __asm__(
@@ -108,36 +108,6 @@ int install_vitadeploy_default() {
     removeDir(TEMP_UX0_PATH "app");
     sceIoMkdir(TEMP_UX0_PATH "app", 0777);
     res = unzip(TEMP_UX0_PATH VDEP_VPK_FNAME, TEMP_UX0_PATH "app");
-    if (res < 0)
-        return res;
-
-    COLORPRINTF(COLOR_CYAN, "Promoting app\n");
-    res = promoteApp(TEMP_UX0_PATH "app");
-    if (res < 0)
-        return res;
-
-    COLORPRINTF(COLOR_GREEN, "All done\n");
-    sceKernelDelayThread(2 * 1000 * 1000);
-
-    return 0;
-}
-
-int install_updateunblocker_default() {
-    sceIoMkdir(TEMP_UX0_PATH, 0777);
-    COLORPRINTF(COLOR_CYAN, "Downloading updateunblocker\n");
-    net(1);
-    int res = download_file(HEN_REPO_URL UPDB_VPK_FNAME, TEMP_UX0_PATH UPDB_VPK_FNAME, TEMP_UX0_PATH UPDB_VPK_FNAME "_tmp", 0);
-    if (res < 0) {
-        if ((uint32_t)res == 0x80010013)
-            printf("Could not open file for write, is ux0 present?\n");
-        return res;
-    }
-    net(0);
-
-    COLORPRINTF(COLOR_CYAN, "Extracting vpk\n");
-    removeDir(TEMP_UX0_PATH "app");
-    sceIoMkdir(TEMP_UX0_PATH "app", 0777);
-    res = unzip(TEMP_UX0_PATH UPDB_VPK_FNAME, TEMP_UX0_PATH "app");
     if (res < 0)
         return res;
 
@@ -262,6 +232,44 @@ VXN_REBOOT:
     while (1) {};
 }
 
+int vshIoMount(int id, const char *path, int permission, int a4, int a5, int a6) {
+    uint32_t buf[3];   
+
+    buf[0] = a4;
+    buf[1] = a5;
+    buf[2] = a6;  
+      
+    return _vshIoMount(id, path, permission, buf);
+}
+
+int unblock_updates() {
+    int ret;
+
+	ret = vshIoUmount(0x300, 0, 0, 0);
+	ret = vshIoUmount(0x300, 1, 0, 0);
+	ret = vshIoMount(0x300, NULL, 2, 0, 0, 0);
+
+    if(ret < 0) {
+        COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s - Fail 1\n", ret);
+        goto UPDB_REBOOT;
+    }
+
+    ret = sceIoRename("vs0:app/NPXS10015/cute_girls_dying_plugin.rco.disabled", "vs0:app/NPXS10015/system_update_plugin.rco");
+    if(ret < 0) {
+        COLORPRINTF(COLOR_RED, "Failed 0x%08X, rebooting in 5s - Fail 2\n", ret);
+        goto UPDB_REBOOT;
+    }
+
+    COLORPRINTF(COLOR_GREEN, "All done, rebooting in 5s\n");
+    
+UPDB_REBOOT:
+    sceKernelDelayThread(5 * 1000 * 1000);
+    scePowerRequestColdReset();
+    sceKernelDelayThread(2 * 1000 * 1000);
+    printf("Process is dead\n");
+    while (1) {};
+}
+
 int install_henkaku(void) {
     COLORPRINTF(COLOR_CYAN, "Preparing ur0:tai/\n");
     sceIoMkdir("ur0:tai", 0777);
@@ -366,6 +374,15 @@ int _start(SceSize args, void* argp) {
                 net(0);
                 if (res < 0) {
                     COLORPRINTF(COLOR_RED, "\nFAILED: 0x%08X\n", res);
+                    sceKernelDelayThread(3 * 1000 * 1000);
+                }
+                sel = 0;
+                main_menu(sel);
+                sceKernelDelayThread(0.3 * 1000 * 1000);
+            } else if (sel == MENU_UNBLOCK_UPDATES) {
+                res = unblock_updates();
+                if (res < 0) {
+                    COLORPRINTF(COLOR_RED, "\nFAILED: - Fail 3 0x%08X\n", res);
                     sceKernelDelayThread(3 * 1000 * 1000);
                 }
                 sel = 0;
